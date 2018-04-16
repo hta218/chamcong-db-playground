@@ -6,17 +6,22 @@ import mlab
 
 mlab.connect()
 
+
 class InstructorRecord(Document):
     course = ObjectIdField()
+    className = StringField()
+    classNo = IntField()
     meta = {'collection': 'instructorrecords', 'strict': False}
+
 
 class Course(Document):
     name = StringField()
     description = StringField()
     meta = {'collection': 'courses', 'strict': False}
 
+
 def varify_course_id(course_name):
-    course_id = None;
+    course_id = None
     for course_obj in Course.objects():
         if course_obj.id == course_name:
             course_id = course_obj.id
@@ -24,21 +29,36 @@ def varify_course_id(course_name):
     return course_id
 
 
-# for index, record in enumerate(InstructorRecord.objects()):
-#     print(index + 1, end=' ')
-#     course_name = record.course
-#     course_id = varify_course_id(course_name)
-#     if course_id is not None:
-#         print(course_name, 'Checked')
-#         # print(course_name, 'has id: ', course_id)
-#         # print("Updating ", course_name, 'to: ', course_id)
-#         # record.update(set__course=course_id)
-#         # print('Done')
-#         # print("*"*20)
-#         # print("*"*20)
-#     else:
-#         print(course_name)
-        # print('*'*50, 'Unknow course: ', course_name)
+
+def convert_class_no():
+    phrase_to_remove = ["1.100", "F", "GRE", "1.", "2.", "3."]
+    with open("record_class_no.log", "w") as f:
+        for record in InstructorRecord.objects():
+            className = record.className
+            if className is None or className == "":
+                f.write(str(record.id) + "\n")
+            else:
+                splittedClassName = record.className.split(" ")
+                lastStringInClassName = splittedClassName[-1]
+                if len(splittedClassName) == 0:
+                    f.write(str(record.id) + "\n")
+                else:
+                    for p in phrase_to_remove:
+                        lastStringInClassName = lastStringInClassName.replace(p, "")
+                    if lastStringInClassName == "":
+                        f.write(str(record.id) + "\n")
+                    else:
+                        print("Trying to convert ...")
+                        class_no = int(lastStringInClassName)
+                        print(class_no)
+                        record.update(set__classNo=class_no)
+                        record.reload()
+                        if record.classNo == class_no:
+                            print("Updated successfully")
+                        else:
+                            print("Did not work")
+                        #f.write(lastStringInClassName + "\n")
 
 
-# TODO: update Intensive course, findout an "underfined" course
+if __name__ == "__main__":
+    convert_class_no()
